@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Alaska Student Pin Map</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  
+  <style>
+    #map {
+      height: 100vh;
+      width: 100%;
+    }
+    .leaflet-popup-content input {
+      display: block;
+      margin-top: 5px;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+  const sheetURL = "https://script.google.com/macros/s/AKfycbzXBlT2vL_fBQUzHUqJ_kqTA96n73OkCqqyUEXZwSb5Y0BmpPls3t-AN-uLtZ0SQ0p7/exec";
+
+  // 1. Create the map
+  const map = L.map('map').setView([64.2008, -149.4937], 4.5); // centered on Alaska
+
+  // 2. Add map tiles
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 12,
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  // 3. Load pins from Google Sheet
+  fetch(sheetURL)
+    .then(res => res.json())
+    .then(data => {
+      data.forEach(pin => {
+        if (pin.Latitude && pin.Longitude) {
+          L.marker([parseFloat(pin.Latitude), parseFloat(pin.Longitude)])
+            .addTo(map)
+            .bindPopup(`<strong>${pin.Name}</strong><br>${pin.Location || ''}`);
+        }
+      });
+    });
+
+  // 4. Add pin on map click
+  map.on('click', function(e) {
+    const lat = e.latlng.lat.toFixed(6);
+    const lng = e.latlng.lng.toFixed(6);
+
+    const popupContent = `
+      <strong>Add Your Pin</strong><br>
+      Name: <input id="pin-name"><br>
+      Location: <input id="pin-location"><br>
+      Cohort: <input id="pin-cohort"><br>
+      <button onclick="submitPin(${lat}, ${lng})">Submit</button>
+    `;
+
+    L.popup()
+      .setLatLng(e.latlng)
+      .setContent(popupContent)
+      .openOn(map);
+  });
+
+  // 5. Submit function
+  function submitPin(lat, lng) {
+    const name = document.getElementById('pin-name').value;
+    const location = document.getElementById('pin-location').value;
+    const cohort = document.getElementById('pin-cohort').value;
+
+    fetch(sheetURL, {
+      method: 'POST',
+      body: JSON.stringify({
+        Name: name,
+        Location: location,
+        Latitude: lat,
+        Longitude: lng,
+        Cohort: cohort
+      }),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }).then(res => {
+      alert("Pin added! Reload the page to see it.");
+      map.closePopup();
+    });
+  }
+</script>
+
+</body>
+</html>
