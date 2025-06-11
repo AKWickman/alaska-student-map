@@ -107,7 +107,7 @@
   const markerCluster = L.markerClusterGroup({ maxClusterRadius: 30 });
   map.addLayer(markerCluster);
 
-  const cohortColors = ["blue", "green", "orange", "red", "purple", "teal", "brown", "black"];
+  const cohortColors = ["blue", "green", "orange", "red", "yellow", "violet", "grey", "black"];
   function getCohortColor(cohort) {
     const index = parseInt(cohort) % cohortColors.length;
     return cohortColors[index];
