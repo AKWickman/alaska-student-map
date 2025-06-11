@@ -9,6 +9,22 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
   <style>
+    .marker-cluster-small {
+      background-color: #a3c4f3 !important;
+      color: white;
+      font-weight: bold;
+      border: 2px solid #234e70;
+      box-shadow: 0 0 6px rgba(0,0,0,0.2);
+    }
+
+    .marker-cluster-medium {
+      background-color: #6794dc !important;
+    }
+
+    .marker-cluster-large {
+      background-color: #234e70 !important;
+    }
+
     body {
       margin: 0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -114,7 +130,9 @@
     });
   }
 
-  const markerCluster = L.markerClusterGroup();
+  const markerCluster = L.markerClusterGroup({
+    maxClusterRadius: 30
+  });
   map.addLayer(markerCluster);
 
   function updateMarkers(data) {
