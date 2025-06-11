@@ -107,9 +107,9 @@
 
   const map = L.map('map').setView([64.2008, -149.4937], 4.5);
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
     maxZoom: 12,
-    attribution: '&copy; OpenStreetMap contributors'
+    attribution: '&copy; OpenStreetMap contributors, Humanitarian OpenStreetMap Team'
   }).addTo(map);
 
   const cohortSelect = document.getElementById('cohort-select');
