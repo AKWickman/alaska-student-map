@@ -6,6 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
   <style>
     body {
       margin: 0;
@@ -112,14 +114,17 @@
     });
   }
 
+  const markerCluster = L.markerClusterGroup();
+  map.addLayer(markerCluster);
+
   function updateMarkers(data) {
-    allMarkers.forEach(marker => map.removeLayer(marker));
+    markerCluster.clearLayers();
     allMarkers = [];
 
     Object.entries(data).forEach(([key, pin]) => {
       const color = getRandomColor();
       const icon = createIcon(color);
-      const marker = L.marker([pin.Latitude, pin.Longitude], { icon }).addTo(map);
+      const marker = L.marker([pin.Latitude, pin.Longitude], { icon });
       allMarkers.push(marker);
 
       const popupContent = `
@@ -134,6 +139,7 @@
       `;
 
       marker.bindPopup(popupContent);
+      markerCluster.addLayer(marker);
     });
   }
 
@@ -193,5 +199,6 @@
 </script>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
 </body>
 </html>
