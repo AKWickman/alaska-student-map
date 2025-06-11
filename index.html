@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>UAS MsEd Ed. Leadership Student Locations</title>
+  <title>UAS MsEd Student Locations</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
@@ -71,7 +71,7 @@
 </head>
 <body>
 
-<header>Alaska Student Pin Map</header>
+<header>UAS MsEd Student Locations</header>
 <div id="filter">
   <label for="cohort-select">Show Cohort:</label>
   <select id="cohort-select">
@@ -103,155 +103,4 @@
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
-  const pinsRef = ref(db, "pins");
-
-  const map = L.map('map').setView([64.2008, -149.4937], 4.5);
-
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 12,
-    attribution: '&copy; OpenStreetMap contributors'
-  }).addTo(map);
-
-  const cohortSelect = document.getElementById('cohort-select');
-  let allMarkers = [];
-
-  const colorPalette = [
-    'blue', 'green', 'orange', 'red', 'purple', 'teal', 'pink', 'brown',
-    'gold', 'navy', 'lime', 'maroon', 'olive', 'cyan', 'indigo', 'coral'
-  ];
-
-  function getCohortColor(cohort) {
-    const n = parseInt(cohort);
-    if (!isNaN(n)) {
-      if (n <= colorPalette.length) {
-        return colorPalette[n - 1];
-      } else {
-        const hue = (n * 47) % 360;
-        return `hsl(${hue}, 70%, 50%)`;
-      }
-    }
-    return 'gray';
-  }
-
-  function createIcon(color) {
-    return new L.Icon({
-      iconUrl: `https://chart.googleapis.com/chart?chst=d_map_pin_icon&chld=pin|${color}`,
-      iconSize: [21, 34],
-      iconAnchor: [10, 34],
-      popupAnchor: [0, -28]
-    });
-  }
-
-  function updateMarkers(data, selectedCohort) {
-    allMarkers.forEach(marker => map.removeLayer(marker));
-    allMarkers = [];
-
-    const cohorts = new Set();
-
-    Object.entries(data).forEach(([key, pin]) => {
-      const cohort = pin.Cohort;
-      if (cohort) cohorts.add(cohort);
-
-      if (selectedCohort === 'all' || selectedCohort === cohort) {
-        const color = getCohortColor(cohort);
-        const icon = createIcon(color);
-
-        const marker = L.marker([pin.Latitude, pin.Longitude], { icon }).addTo(map);
-        allMarkers.push(marker);
-
-        const popupContent = `
-          <strong>${pin.Name}</strong><br>
-          ${pin.Location || ''}<br>
-          ${pin.Cohort || ''}<br><br>
-          <button onclick="showDeleteConfirm('${key}')">Delete</button>
-          <div id="confirm-${key}" class="hidden-confirm">
-            Type DELETE to confirm:<br>
-            <input id="input-${key}" placeholder="DELETE">
-            <button onclick="confirmDelete('${key}')">Confirm Delete</button>
-          </div>
-        `;
-
-        marker.bindPopup(popupContent);
-      }
-    });
-
-    // Update dropdown
-    const existingOptions = Array.from(cohortSelect.options).map(o => o.value);
-    cohorts.forEach(cohort => {
-      if (!existingOptions.includes(cohort)) {
-        const option = document.createElement('option');
-        option.value = cohort;
-        option.textContent = `Cohort ${cohort}`;
-        cohortSelect.appendChild(option);
-      }
-    });
-  }
-
-  onValue(pinsRef, (snapshot) => {
-    const data = snapshot.val();
-    if (data) updateMarkers(data, cohortSelect.value);
-  });
-
-  cohortSelect.addEventListener('change', () => {
-    onValue(pinsRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) updateMarkers(data, cohortSelect.value);
-    });
-  });
-
-  map.on('click', function(e) {
-    const lat = e.latlng.lat.toFixed(6);
-    const lng = e.latlng.lng.toFixed(6);
-
-    const popupContent = `
-      <strong>Add Your Pin</strong><br>
-      Name: <input id="pin-name"><br>
-      Location: <input id="pin-location"><br>
-      Cohort: <input id="pin-cohort"><br>
-      <button onclick="submitPin(${lat}, ${lng})">Submit</button>
-    `;
-
-    L.popup()
-      .setLatLng(e.latlng)
-      .setContent(popupContent)
-      .openOn(map);
-  });
-
-  window.submitPin = function(lat, lng) {
-    const name = document.getElementById('pin-name').value;
-    const location = document.getElementById('pin-location').value;
-    const cohort = document.getElementById('pin-cohort').value;
-
-    push(pinsRef, {
-      Name: name,
-      Location: location,
-      Latitude: parseFloat(lat),
-      Longitude: parseFloat(lng),
-      Cohort: cohort,
-      Timestamp: Date.now()
-    });
-
-    map.closePopup();
-    alert("Pin added! Refresh to see it.");
-  };
-
-  window.showDeleteConfirm = function(key) {
-    const box = document.getElementById(`confirm-${key}`);
-    if (box) box.style.display = 'block';
-  };
-
-  window.confirmDelete = function(key) {
-    const input = document.getElementById(`input-${key}`);
-    if (input && input.value === "DELETE") {
-      remove(child(pinsRef, key));
-      map.closePopup();
-      alert("Pin deleted!");
-    } else {
-      alert("You must type DELETE exactly.");
-    }
-  };
-</script>
-
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-</body>
-</html>
+  const pinsRef = ref(db, "pins"
