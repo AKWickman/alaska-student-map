@@ -115,4 +115,136 @@
   const cohortSelect = document.getElementById('cohort-select');
   let allMarkers = [];
 
-  const supportedColors = ['blue', 'red', 'green', 'orange', 'yellow', 'violet',
+  const supportedColors = ['blue', 'red', 'green', 'orange', 'yellow', 'violet', 'grey', 'black'];
+
+  function getCohortColor(cohort) {
+    const n = parseInt(cohort);
+    if (!isNaN(n)) {
+      return supportedColors[(n - 1) % supportedColors.length];
+    }
+    return 'grey';
+  }
+
+  function createIcon(color) {
+    return new L.Icon({
+      iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${color}.png`,
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowUrl: 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-shadow.png',
+      shadowSize: [41, 41]
+    });
+  }
+
+  function updateMarkers(data, selectedCohort) {
+    allMarkers.forEach(marker => map.removeLayer(marker));
+    allMarkers = [];
+
+    const cohorts = new Set();
+
+    Object.entries(data).forEach(([key, pin]) => {
+      const cohort = pin.Cohort;
+      if (cohort) cohorts.add(cohort);
+
+      if (selectedCohort === 'all' || selectedCohort === cohort) {
+        const color = getCohortColor(cohort);
+        const icon = createIcon(color);
+
+        const marker = L.marker([pin.Latitude, pin.Longitude], { icon }).addTo(map);
+        allMarkers.push(marker);
+
+        const popupContent = `
+          <strong>${pin.Name}</strong><br>
+          ${pin.Location || ''}<br>
+          ${pin.Cohort || ''}<br><br>
+          <button onclick="showDeleteConfirm('${key}')">Delete</button>
+          <div id="confirm-${key}" class="hidden-confirm">
+            Type DELETE to confirm:<br>
+            <input id="input-${key}" placeholder="DELETE">
+            <button onclick="confirmDelete('${key}')">Confirm Delete</button>
+          </div>
+        `;
+
+        marker.bindPopup(popupContent);
+      }
+    });
+
+    const existingOptions = Array.from(cohortSelect.options).map(o => o.value);
+    cohorts.forEach(cohort => {
+      if (!existingOptions.includes(cohort)) {
+        const option = document.createElement('option');
+        option.value = cohort;
+        option.textContent = `Cohort ${cohort}`;
+        cohortSelect.appendChild(option);
+      }
+    });
+  }
+
+  onValue(pinsRef, (snapshot) => {
+    const data = snapshot.val();
+    if (data) updateMarkers(data, cohortSelect.value);
+  });
+
+  cohortSelect.addEventListener('change', () => {
+    onValue(pinsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) updateMarkers(data, cohortSelect.value);
+    });
+  });
+
+  map.on('click', function(e) {
+    const lat = e.latlng.lat.toFixed(6);
+    const lng = e.latlng.lng.toFixed(6);
+
+    const popupContent = `
+      <strong>Add Your Pin</strong><br>
+      Name: <input id="pin-name"><br>
+      Location: <input id="pin-location"><br>
+      Cohort: <input id="pin-cohort"><br>
+      <button onclick="submitPin(${lat}, ${lng})">Submit</button>
+    `;
+
+    L.popup()
+      .setLatLng(e.latlng)
+      .setContent(popupContent)
+      .openOn(map);
+  });
+
+  window.submitPin = function(lat, lng) {
+    const name = document.getElementById('pin-name').value;
+    const location = document.getElementById('pin-location').value;
+    const cohort = document.getElementById('pin-cohort').value;
+
+    push(pinsRef, {
+      Name: name,
+      Location: location,
+      Latitude: parseFloat(lat),
+      Longitude: parseFloat(lng),
+      Cohort: cohort,
+      Timestamp: Date.now()
+    });
+
+    map.closePopup();
+    alert("Pin added! Refresh to see it.");
+  };
+
+  window.showDeleteConfirm = function(key) {
+    const box = document.getElementById(`confirm-${key}`);
+    if (box) box.style.display = 'block';
+  };
+
+  window.confirmDelete = function(key) {
+    const input = document.getElementById(`input-${key}`);
+    if (input && input.value === "DELETE") {
+      remove(child(pinsRef, key));
+      map.closePopup();
+      alert("Pin deleted!");
+    } else {
+      alert("You must type DELETE exactly.");
+    }
+  };
+</script>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+</body>
+</html>
