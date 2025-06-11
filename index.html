@@ -7,7 +7,6 @@
   
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  
   <style>
     #map {
       height: 100vh;
@@ -15,7 +14,7 @@
     }
     .leaflet-popup-content input {
       display: block;
-      margin-top: 5px;
+      margin: 5px 0;
       width: 100%;
     }
   </style>
@@ -24,35 +23,46 @@
 
 <div id="map"></div>
 
-<!-- Leaflet JS -->
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-<script>
-  const sheetURL = "https://script.google.com/macros/s/AKfycbyQt6FmVvBtzLCI_QO1mL1Dq2i_T-rPjsaXZKFvPIpgFEhyBkayiSxXaRs39_A8A6U2/exec";
+  // ✅ Your Firebase config
+  const firebaseConfig = {
+    apiKey: "AIzaSyDgYk7_V4iIUNzIa8eVLkW0J8yUswm8UpA",
+    authDomain: "alaskapinmap.firebaseapp.com",
+    databaseURL: "https://alaskapinmap-default-rtdb.firebaseio.com",
+    projectId: "alaskapinmap",
+    storageBucket: "alaskapinmap.firebasestorage.app",
+    messagingSenderId: "403874630977",
+    appId: "1:403874630977:web:0253494e3fb7688b1965c0"
+  };
 
-  // 1. Create the map
-  const map = L.map('map').setView([64.2008, -149.4937], 4.5); // centered on Alaska
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const pinsRef = ref(db, "pins");
 
-  // 2. Add map tiles
+  // Leaflet setup
+  const map = L.map('map').setView([64.2008, -149.4937], 4.5);
+
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 12,
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
 
-  // 3. Load pins from Google Sheet
-  fetch(sheetURL)
-    .then(res => res.json())
-    .then(data => {
-      data.forEach(pin => {
-        if (pin.Latitude && pin.Longitude) {
-          L.marker([parseFloat(pin.Latitude), parseFloat(pin.Longitude)])
-            .addTo(map)
-            .bindPopup(`<strong>${pin.Name}</strong><br>${pin.Location || ''}`);
-        }
-      });
+  // Load existing pins
+  onValue(pinsRef, (snapshot) => {
+    const data = snapshot.val();
+    if (!data) return;
+    Object.values(data).forEach(pin => {
+      L.marker([pin.Latitude, pin.Longitude])
+        .addTo(map)
+        .bindPopup(`<strong>${pin.Name}</strong><br>${pin.Location || ''}<br>${pin.Cohort || ''}`);
     });
+  });
 
-  // 4. Add pin on map click
+  // Handle map clicks
   map.on('click', function(e) {
     const lat = e.latlng.lat.toFixed(6);
     const lng = e.latlng.lng.toFixed(6);
@@ -71,30 +81,28 @@
       .openOn(map);
   });
 
-  // 5. Submit function
-  function submitPin(lat, lng) {
+  // Make submitPin globally accessible
+  window.submitPin = function(lat, lng) {
     const name = document.getElementById('pin-name').value;
     const location = document.getElementById('pin-location').value;
     const cohort = document.getElementById('pin-cohort').value;
 
-    fetch(sheetURL, {
-      method: 'POST',
-      body: JSON.stringify({
-        Name: name,
-        Location: location,
-        Latitude: lat,
-        Longitude: lng,
-        Cohort: cohort
-      }),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    }).then(res => {
-      alert("Pin added! Reload the page to see it.");
-      map.closePopup();
+    push(pinsRef, {
+      Name: name,
+      Location: location,
+      Latitude: parseFloat(lat),
+      Longitude: parseFloat(lng),
+      Cohort: cohort,
+      Timestamp: Date.now()
     });
-  }
+
+    map.closePopup();
+    alert("Pin added! Refresh to see it.");
+  };
 </script>
+
+<!-- Leaflet JS (after Firebase module) -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 </body>
 </html>
