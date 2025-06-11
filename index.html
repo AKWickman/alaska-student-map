@@ -9,6 +9,16 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
   <style>
+    .marker-cluster {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .marker-cluster:hover {
+      transform: scale(1.15);
+      box-shadow: 0 0 12px rgba(0, 0, 0, 0.4);
+      z-index: 1000;
+    }
+
     .marker-cluster-small {
       background-color: #a3c4f3 !important;
       color: white;
