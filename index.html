@@ -8,22 +8,63 @@
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
-    body { margin: 0; }
-    #map { height: 100vh; width: 100%; }
-    input, button {
-      margin: 5px 0;
-      width: 100%;
-      font-size: 14px;
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f5f7fa;
     }
+
+    header {
+      background-color: #234e70;
+      color: white;
+      padding: 12px 20px;
+      text-align: center;
+      font-size: 1.5em;
+      font-weight: bold;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+
+    #map {
+      height: calc(100vh - 60px);
+      width: 100%;
+    }
+
+    .leaflet-popup-content {
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    input, button {
+      padding: 8px;
+      font-size: 14px;
+      margin-top: 6px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    button {
+      background-color: #234e70;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      background-color: #999;
+      cursor: not-allowed;
+    }
+
     .hidden-confirm {
       display: none;
       margin-top: 10px;
-      color: red;
+      color: #c0392b;
     }
   </style>
 </head>
 <body>
 
+<header>Alaska Student Pin Map</header>
 <div id="map"></div>
 
 <!-- Firebase SDK -->
