@@ -4,18 +4,22 @@
   <meta charset="utf-8" />
   <title>Alaska Student Pin Map</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
+
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
-    #map {
-      height: 100vh;
-      width: 100%;
-    }
-    .leaflet-popup-content input {
-      display: block;
+    body { margin: 0; }
+    #map { height: 100vh; width: 100%; }
+
+    input, button {
       margin: 5px 0;
       width: 100%;
+      font-size: 14px;
+    }
+    .delete-confirm {
+      margin-top: 10px;
+      color: red;
+      font-weight: bold;
     }
   </style>
 </head>
@@ -26,9 +30,15 @@
 <!-- Firebase SDK -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  import {
+    getDatabase,
+    ref,
+    push,
+    onValue,
+    remove,
+    child
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-  // ✅ Your Firebase config
   const firebaseConfig = {
     apiKey: "AIzaSyDgYk7_V4iIUNzIa8eVLkW0J8yUswm8UpA",
     authDomain: "alaskapinmap.firebaseapp.com",
@@ -43,7 +53,6 @@
   const db = getDatabase(app);
   const pinsRef = ref(db, "pins");
 
-  // Leaflet setup
   const map = L.map('map').setView([64.2008, -149.4937], 4.5);
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -51,18 +60,52 @@
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
 
-  // Load existing pins
+  // Load and display pins
   onValue(pinsRef, (snapshot) => {
+    map.eachLayer((layer) => {
+      if (layer instanceof L.Marker) {
+        map.removeLayer(layer);
+      }
+    });
+
     const data = snapshot.val();
     if (!data) return;
-    Object.values(data).forEach(pin => {
-      L.marker([pin.Latitude, pin.Longitude])
-        .addTo(map)
-        .bindPopup(`<strong>${pin.Name}</strong><br>${pin.Location || ''}<br>${pin.Cohort || ''}`);
+
+    Object.entries(data).forEach(([key, pin]) => {
+      const marker = L.marker([pin.Latitude, pin.Longitude]).addTo(map);
+
+      const popupContent = `
+        <strong>${pin.Name}</strong><br>
+        ${pin.Location || ''}<br>
+        ${pin.Cohort || ''}<br><br>
+        <div class="delete-confirm">
+          Type DELETE to remove:
+          <input id="confirm-${key}" placeholder="DELETE">
+          <button id="delete-${key}" disabled>Delete Pin</button>
+        </div>
+      `;
+
+      marker.bindPopup(popupContent);
+
+      // Handle confirmation + deletion
+      marker.on('popupopen', () => {
+        const input = document.getElementById(`confirm-${key}`);
+        const button = document.getElementById(`delete-${key}`);
+
+        input.addEventListener('input', () => {
+          button.disabled = input.value !== "DELETE";
+        });
+
+        button.addEventListener('click', () => {
+          remove(child(pinsRef, key));
+          map.closePopup();
+          alert("Pin deleted! Reload the page to confirm.");
+        });
+      });
     });
   });
 
-  // Handle map clicks
+  // Add pin on click
   map.on('click', function(e) {
     const lat = e.latlng.lat.toFixed(6);
     const lng = e.latlng.lng.toFixed(6);
@@ -81,7 +124,7 @@
       .openOn(map);
   });
 
-  // Make submitPin globally accessible
+  // Submit new pin
   window.submitPin = function(lat, lng) {
     const name = document.getElementById('pin-name').value;
     const location = document.getElementById('pin-location').value;
@@ -97,11 +140,11 @@
     });
 
     map.closePopup();
-    alert("Pin added! Refresh to see it.");
+    alert("Pin added! Refresh the map to see it.");
   };
 </script>
 
-<!-- Leaflet JS (after Firebase module) -->
+<!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 </body>
