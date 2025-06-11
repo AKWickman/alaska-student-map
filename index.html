@@ -103,4 +103,16 @@
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
-  const pinsRef = ref(db, "pins"
+  const pinsRef = ref(db, "pins");
+
+  const map = L.map('map').setView([64.2008, -149.4937], 4.5);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 12,
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  const cohortSelect = document.getElementById('cohort-select');
+  let allMarkers = [];
+
+  const supportedColors = ['blue', 'red', 'green', 'orange', 'yellow', 'violet',
