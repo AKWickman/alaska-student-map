@@ -124,7 +124,8 @@
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a>',
     subdomains: 'abcd',
-    pane: 'overlayPane'
+    pane: 'overlayPane',
+  minZoom: 3
   }).addTo(map);
 
   let allMarkers = [];
