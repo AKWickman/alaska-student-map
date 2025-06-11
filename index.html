@@ -9,38 +9,11 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
   <style>
-    .marker-cluster {
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .marker-cluster:hover {
-      transform: scale(1.15);
-      box-shadow: 0 0 12px rgba(0, 0, 0, 0.4);
-      z-index: 1000;
-    }
-
-    .marker-cluster-small {
-      background-color: #a3c4f3 !important;
-      color: white;
-      font-weight: bold;
-      border: 2px solid #234e70;
-      box-shadow: 0 0 6px rgba(0,0,0,0.2);
-    }
-
-    .marker-cluster-medium {
-      background-color: #6794dc !important;
-    }
-
-    .marker-cluster-large {
-      background-color: #234e70 !important;
-    }
-
     body {
       margin: 0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background-color: #f5f7fa;
     }
-
     header {
       background-color: #234e70;
       color: white;
@@ -50,43 +23,53 @@
       font-weight: bold;
       box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     }
-
     #map {
-      height: calc(100vh - 60px);
+      height: calc(100vh - 120px);
       width: 100%;
     }
-
-    input, button {
-      padding: 8px;
+    #form-container {
+      display: flex;
+      gap: 10px;
+      padding: 10px;
+      background-color: #fff;
+      border-bottom: 1px solid #ccc;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    input, select, button {
+      padding: 6px;
       font-size: 14px;
-      margin-top: 6px;
       border: 1px solid #ccc;
       border-radius: 4px;
-      width: 100%;
-      box-sizing: border-box;
     }
-
     button {
       background-color: #234e70;
       color: white;
       cursor: pointer;
     }
-
-    button:disabled {
-      background-color: #999;
-      cursor: not-allowed;
+    .marker-cluster {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
-
-    .hidden-confirm {
-      display: none;
-      margin-top: 10px;
-      color: #c0392b;
+    .marker-cluster:hover {
+      transform: scale(1.15);
+      box-shadow: 0 0 12px rgba(0, 0, 0, 0.4);
+      z-index: 1000;
     }
   </style>
 </head>
 <body>
 
 <header>UAS MsEd Student Locations</header>
+<div id="form-container">
+  Name: <input id="form-name" placeholder="Your Name">
+  Location: <input id="form-location" placeholder="Town, State">
+  Cohort: <input id="form-cohort" placeholder="e.g., 5">
+  <button onclick="handleFormSubmit()">Place New Pin</button>
+  Filter by Cohort:
+  <select id="cohort-filter" onchange="filterMarkers()">
+    <option value="">All</option>
+  </select>
+</div>
 <div id="map"></div>
 
 <script type="module">
@@ -121,12 +104,13 @@
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
 
-  let allMarkers = [];
+  const markerCluster = L.markerClusterGroup({ maxClusterRadius: 30 });
+  map.addLayer(markerCluster);
 
-  const rainbowColors = ['blue', 'red', 'green', 'orange', 'yellow', 'violet', 'grey', 'black'];
-
-  function getRandomColor() {
-    return rainbowColors[Math.floor(Math.random() * rainbowColors.length)];
+  const cohortColors = ["blue", "green", "orange", "red", "purple", "teal", "brown", "black"];
+  function getCohortColor(cohort) {
+    const index = parseInt(cohort) % cohortColors.length;
+    return cohortColors[index];
   }
 
   function createIcon(color) {
@@ -140,24 +124,26 @@
     });
   }
 
-  const markerCluster = L.markerClusterGroup({
-    maxClusterRadius: 30
-  });
-  map.addLayer(markerCluster);
+  const allMarkers = [];
+  let allData = {};
 
   function updateMarkers(data) {
     markerCluster.clearLayers();
-    allMarkers = [];
+    allMarkers.length = 0;
+    allData = data;
+
+    const cohortSet = new Set();
 
     Object.entries(data).forEach(([key, pin]) => {
-      const color = getRandomColor();
-      const icon = createIcon(color);
+      cohortSet.add(pin.Cohort);
+      const icon = createIcon(getCohortColor(pin.Cohort));
       const marker = L.marker([pin.Latitude, pin.Longitude], { icon });
-      allMarkers.push(marker);
+      marker._cohort = pin.Cohort;
 
       const popupContent = `
         <strong>${pin.Name}</strong><br>
-        ${pin.Location || ''}<br><br>
+        ${pin.Location || ''}<br>
+        Cohort: ${pin.Cohort}<br><br>
         <button onclick="showDeleteConfirm('${key}')">Delete</button>
         <div id="confirm-${key}" class="hidden-confirm">
           Type DELETE to confirm:<br>
@@ -168,6 +154,26 @@
 
       marker.bindPopup(popupContent);
       markerCluster.addLayer(marker);
+      allMarkers.push(marker);
+    });
+
+    const select = document.getElementById('cohort-filter');
+    select.innerHTML = '<option value="">All</option>';
+    Array.from(cohortSet).sort().forEach(cohort => {
+      const opt = document.createElement('option');
+      opt.value = cohort;
+      opt.textContent = `Cohort ${cohort}`;
+      select.appendChild(opt);
+    });
+  }
+
+  function filterMarkers() {
+    const value = document.getElementById("cohort-filter").value;
+    markerCluster.clearLayers();
+    allMarkers.forEach(marker => {
+      if (!value || marker._cohort === value) {
+        markerCluster.addLayer(marker);
+      }
     });
   }
 
@@ -176,37 +182,37 @@
     if (data) updateMarkers(data);
   });
 
-  map.on('click', function(e) {
-    const lat = e.latlng.lat.toFixed(6);
-    const lng = e.latlng.lng.toFixed(6);
+  window.handleFormSubmit = async function () {
+    const name = document.getElementById("form-name").value.trim();
+    const location = document.getElementById("form-location").value.trim();
+    const cohort = document.getElementById("form-cohort").value.trim();
 
-    const popupContent = `
-      <strong>Add Your Pin</strong><br>
-      Name: <input id="pin-name"><br>
-      Location: <input id="pin-location"><br>
-      <button onclick="submitPin(${lat}, ${lng})">Submit</button>
-    `;
+    if (!name || !location || !cohort) return alert("Please fill in all fields.");
 
-    L.popup()
-      .setLatLng(e.latlng)
-      .setContent(popupContent)
-      .openOn(map);
-  });
+    const query = encodeURIComponent(location);
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${query}`;
 
-  window.submitPin = function(lat, lng) {
-    const name = document.getElementById('pin-name').value;
-    const location = document.getElementById('pin-location').value;
+    try {
+      const response = await fetch(url);
+      const results = await response.json();
+      if (!results.length) return alert("Location not found.");
 
-    push(pinsRef, {
-      Name: name,
-      Location: location,
-      Latitude: parseFloat(lat),
-      Longitude: parseFloat(lng),
-      Timestamp: Date.now()
-    });
+      const lat = parseFloat(results[0].lat);
+      const lon = parseFloat(results[0].lon);
 
-    map.closePopup();
-    alert("Pin added! Refresh to see it.");
+      push(pinsRef, {
+        Name: name,
+        Location: location,
+        Latitude: lat,
+        Longitude: lon,
+        Cohort: cohort,
+        Timestamp: Date.now()
+      });
+
+      alert("Pin added! Refresh to see it.");
+    } catch (err) {
+      alert("Failed to look up location.");
+    }
   };
 
   window.showDeleteConfirm = function(key) {
