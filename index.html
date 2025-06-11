@@ -97,7 +97,7 @@
   const db = getDatabase(app);
   const pinsRef = ref(db, "pins");
 
-  const map = L.map('map').setView([64.2008, -149.4937], 4.5);
+  const map = L.map('map', { wheelPxPerZoomLevel: 120 }).setView([64.2008, -149.4937], 4.5);
 
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
     maxZoom: 18,
