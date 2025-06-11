@@ -23,21 +23,8 @@
       box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     }
 
-    #filter {
-      padding: 10px;
-      text-align: center;
-      background-color: #eef2f5;
-      border-bottom: 1px solid #ccc;
-    }
-
-    select {
-      padding: 8px;
-      font-size: 14px;
-      border-radius: 4px;
-    }
-
     #map {
-      height: calc(100vh - 110px);
+      height: calc(100vh - 60px);
       width: 100%;
     }
 
@@ -72,12 +59,6 @@
 <body>
 
 <header>UAS MsEd Student Locations</header>
-<div id="filter">
-  <label for="cohort-select">Show Cohort:</label>
-  <select id="cohort-select">
-    <option value="all">All Cohorts</option>
-  </select>
-</div>
 <div id="map"></div>
 
 <script type="module">
@@ -112,17 +93,12 @@
     attribution: '&copy; OpenStreetMap contributors, Humanitarian OpenStreetMap Team'
   }).addTo(map);
 
-  const cohortSelect = document.getElementById('cohort-select');
   let allMarkers = [];
 
-  const supportedColors = ['blue', 'red', 'green', 'orange', 'yellow', 'violet', 'grey', 'black'];
+  const rainbowColors = ['blue', 'red', 'green', 'orange', 'yellow', 'violet', 'grey', 'black'];
 
-  function getCohortColor(cohort) {
-    const n = parseInt(cohort);
-    if (!isNaN(n)) {
-      return supportedColors[(n - 1) % supportedColors.length];
-    }
-    return 'grey';
+  function getRandomColor() {
+    return rainbowColors[Math.floor(Math.random() * rainbowColors.length)];
   }
 
   function createIcon(color) {
@@ -136,60 +112,34 @@
     });
   }
 
-  function updateMarkers(data, selectedCohort) {
+  function updateMarkers(data) {
     allMarkers.forEach(marker => map.removeLayer(marker));
     allMarkers = [];
 
-    const cohorts = new Set();
-
     Object.entries(data).forEach(([key, pin]) => {
-      const cohort = pin.Cohort;
-      if (cohort) cohorts.add(cohort);
+      const color = getRandomColor();
+      const icon = createIcon(color);
+      const marker = L.marker([pin.Latitude, pin.Longitude], { icon }).addTo(map);
+      allMarkers.push(marker);
 
-      if (selectedCohort === 'all' || selectedCohort === cohort) {
-        const color = getCohortColor(cohort);
-        const icon = createIcon(color);
+      const popupContent = `
+        <strong>${pin.Name}</strong><br>
+        ${pin.Location || ''}<br><br>
+        <button onclick="showDeleteConfirm('${key}')">Delete</button>
+        <div id="confirm-${key}" class="hidden-confirm">
+          Type DELETE to confirm:<br>
+          <input id="input-${key}" placeholder="DELETE">
+          <button onclick="confirmDelete('${key}')">Confirm Delete</button>
+        </div>
+      `;
 
-        const marker = L.marker([pin.Latitude, pin.Longitude], { icon }).addTo(map);
-        allMarkers.push(marker);
-
-        const popupContent = `
-          <strong>${pin.Name}</strong><br>
-          ${pin.Location || ''}<br>
-          ${pin.Cohort || ''}<br><br>
-          <button onclick="showDeleteConfirm('${key}')">Delete</button>
-          <div id="confirm-${key}" class="hidden-confirm">
-            Type DELETE to confirm:<br>
-            <input id="input-${key}" placeholder="DELETE">
-            <button onclick="confirmDelete('${key}')">Confirm Delete</button>
-          </div>
-        `;
-
-        marker.bindPopup(popupContent);
-      }
-    });
-
-    const existingOptions = Array.from(cohortSelect.options).map(o => o.value);
-    cohorts.forEach(cohort => {
-      if (!existingOptions.includes(cohort)) {
-        const option = document.createElement('option');
-        option.value = cohort;
-        option.textContent = `Cohort ${cohort}`;
-        cohortSelect.appendChild(option);
-      }
+      marker.bindPopup(popupContent);
     });
   }
 
   onValue(pinsRef, (snapshot) => {
     const data = snapshot.val();
-    if (data) updateMarkers(data, cohortSelect.value);
-  });
-
-  cohortSelect.addEventListener('change', () => {
-    onValue(pinsRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) updateMarkers(data, cohortSelect.value);
-    });
+    if (data) updateMarkers(data);
   });
 
   map.on('click', function(e) {
@@ -200,7 +150,6 @@
       <strong>Add Your Pin</strong><br>
       Name: <input id="pin-name"><br>
       Location: <input id="pin-location"><br>
-      Cohort: <input id="pin-cohort"><br>
       <button onclick="submitPin(${lat}, ${lng})">Submit</button>
     `;
 
@@ -213,14 +162,12 @@
   window.submitPin = function(lat, lng) {
     const name = document.getElementById('pin-name').value;
     const location = document.getElementById('pin-location').value;
-    const cohort = document.getElementById('pin-cohort').value;
 
     push(pinsRef, {
       Name: name,
       Location: location,
       Latitude: parseFloat(lat),
       Longitude: parseFloat(lng),
-      Cohort: cohort,
       Timestamp: Date.now()
     });
 
