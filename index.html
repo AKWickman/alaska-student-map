@@ -10,16 +10,15 @@
   <style>
     body { margin: 0; }
     #map { height: 100vh; width: 100%; }
-
     input, button {
       margin: 5px 0;
       width: 100%;
       font-size: 14px;
     }
-    .delete-confirm {
+    .hidden-confirm {
+      display: none;
       margin-top: 10px;
       color: red;
-      font-weight: bold;
     }
   </style>
 </head>
@@ -60,7 +59,7 @@
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
 
-  // Load and display pins
+  // Load pins
   onValue(pinsRef, (snapshot) => {
     map.eachLayer((layer) => {
       if (layer instanceof L.Marker) {
@@ -78,34 +77,19 @@
         <strong>${pin.Name}</strong><br>
         ${pin.Location || ''}<br>
         ${pin.Cohort || ''}<br><br>
-        <div class="delete-confirm">
-          Type DELETE to remove:
-          <input id="confirm-${key}" placeholder="DELETE">
-          <button id="delete-${key}" disabled>Delete Pin</button>
+        <button onclick="showDeleteConfirm('${key}')">Delete</button>
+        <div id="confirm-${key}" class="hidden-confirm">
+          Type DELETE to confirm:<br>
+          <input id="input-${key}" placeholder="DELETE">
+          <button onclick="confirmDelete('${key}')">Confirm Delete</button>
         </div>
       `;
 
       marker.bindPopup(popupContent);
-
-      // Handle confirmation + deletion
-      marker.on('popupopen', () => {
-        const input = document.getElementById(`confirm-${key}`);
-        const button = document.getElementById(`delete-${key}`);
-
-        input.addEventListener('input', () => {
-          button.disabled = input.value !== "DELETE";
-        });
-
-        button.addEventListener('click', () => {
-          remove(child(pinsRef, key));
-          map.closePopup();
-          alert("Pin deleted! Reload the page to confirm.");
-        });
-      });
     });
   });
 
-  // Add pin on click
+  // Add pin
   map.on('click', function(e) {
     const lat = e.latlng.lat.toFixed(6);
     const lng = e.latlng.lng.toFixed(6);
@@ -140,7 +124,25 @@
     });
 
     map.closePopup();
-    alert("Pin added! Refresh the map to see it.");
+    alert("Pin added! Refresh to see it.");
+  };
+
+  // Show confirm box
+  window.showDeleteConfirm = function(key) {
+    const box = document.getElementById(`confirm-${key}`);
+    if (box) box.style.display = 'block';
+  };
+
+  // Confirm delete
+  window.confirmDelete = function(key) {
+    const input = document.getElementById(`input-${key}`);
+    if (input && input.value === "DELETE") {
+      remove(child(pinsRef, key));
+      map.closePopup();
+      alert("Pin deleted!");
+    } else {
+      alert("You must type DELETE exactly.");
+    }
   };
 </script>
 
