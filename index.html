@@ -105,7 +105,23 @@
     attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community'
   }).addTo(map);
 
-  const markerCluster = L.markerClusterGroup({ maxClusterRadius: 30 });
+  const markerCluster = L.markerClusterGroup({
+    maxClusterRadius: 30,
+    spiderfyOnEveryZoom: true,
+    spiderLegPolylineOptions: {
+      weight: 1.5,
+      color: "#666",
+      opacity: 0.6
+    },
+    animate: true,
+    animateAddingMarkers: true,
+    spiderfyDistanceMultiplier: 1.5,
+    spiderfyShapePositions: function(count, centerPt) {
+      // Use spiral layout for all clusters
+      return L.MarkerCluster.Spiderfier._generatePointsSpiral(count, centerPt);
+    }
+  });
+
   map.addLayer(markerCluster);
 
   const cohortColors = ["blue", "green", "orange", "red", "yellow", "violet", "grey", "black"];
