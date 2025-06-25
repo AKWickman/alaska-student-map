@@ -174,7 +174,7 @@
     }
   }
 
-  function filterMarkers() {
+  window.filterMarkers = function () {
     const value = document.getElementById("cohort-filter").value.trim();
     markerCluster.clearLayers();
     allMarkers.forEach(marker => {
