@@ -175,7 +175,7 @@ if ([...select.options].some(opt => opt.value === previousValue)) {
     const value = document.getElementById("cohort-filter").value;
     markerCluster.clearLayers();
     allMarkers.forEach(marker => {
-      if (!value || marker._cohort === value) {
+      if (!value || String(marker._cohort) === value) {
         markerCluster.addLayer(marker);
       }
     });
