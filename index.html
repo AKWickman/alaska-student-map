@@ -135,15 +135,16 @@
     const cohortSet = new Set();
 
     Object.entries(data).forEach(([key, pin]) => {
-      if (pin.Cohort) cohortSet.add(String(pin.Cohort).trim());
-      const icon = createIcon(getCohortColor(pin.Cohort));
+      const cohort = String(pin.Cohort).trim();
+      if (cohort) cohortSet.add(cohort);
+      const icon = createIcon(getCohortColor(cohort));
       const marker = L.marker([pin.Latitude, pin.Longitude], { icon });
-      marker._cohort = pin.Cohort;
+      marker._cohort = cohort;
 
       const popupContent = `
         <strong>${pin.Name}</strong><br>
         ${pin.Location || ''}<br>
-        Cohort: ${pin.Cohort}<br><br>
+        Cohort: ${cohort}<br><br>
         <button onclick="showDeleteConfirm('${key}')">Delete</button>
         <div id="confirm-${key}" class="hidden-confirm">
           Type DELETE to confirm:<br>
@@ -173,10 +174,10 @@
   }
 
   function filterMarkers() {
-    const value = document.getElementById("cohort-filter").value;
+    const value = document.getElementById("cohort-filter").value.trim();
     markerCluster.clearLayers();
     allMarkers.forEach(marker => {
-      if (!value || String(marker._cohort) === value) {
+      if (!value || String(marker._cohort).trim() === value) {
         markerCluster.addLayer(marker);
       }
     });
