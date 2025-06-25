@@ -135,7 +135,7 @@
     const cohortSet = new Set();
 
     Object.entries(data).forEach(([key, pin]) => {
-      cohortSet.add(pin.Cohort);
+      if (pin.Cohort) cohortSet.add(String(pin.Cohort).trim());
       const icon = createIcon(getCohortColor(pin.Cohort));
       const marker = L.marker([pin.Latitude, pin.Longitude], { icon });
       marker._cohort = pin.Cohort;
