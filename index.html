@@ -138,7 +138,7 @@
       if (pin.Cohort) cohortSet.add(String(pin.Cohort).trim());
       const icon = createIcon(getCohortColor(pin.Cohort));
       const marker = L.marker([pin.Latitude, pin.Longitude], { icon });
-      marker._cohort = String(pin.Cohort).trim();
+      marker._cohort = pin.Cohort;
 
       const popupContent = `
         <strong>${pin.Name}</strong><br>
@@ -160,15 +160,12 @@
     const select = document.getElementById('cohort-filter');
     const previousValue = select.value;
     select.innerHTML = '<option value="">All</option>';
-    Array.from(cohortSet)
-      .filter(cohort => cohort !== undefined && cohort !== null && cohort !== "")
-      .sort((a, b) => parseInt(a) - parseInt(b))
-      .forEach(cohort => {
-        const opt = document.createElement('option');
-        opt.value = cohort;
-        opt.textContent = `Cohort ${cohort}`;
-        select.appendChild(opt);
-      });
+    Array.from(cohortSet).sort((a, b) => Number(a) - Number(b)).forEach(cohort => {
+      const opt = document.createElement('option');
+      opt.value = cohort;
+      opt.textContent = cohort;
+      select.appendChild(opt);
+    });
 
     if ([...select.options].some(opt => opt.value === previousValue)) {
       select.value = previousValue;
