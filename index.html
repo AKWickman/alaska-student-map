@@ -22,6 +22,17 @@
       font-size: 1.5em;
       font-weight: bold;
       box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      position: relative;
+    }
+    #toggle-form {
+      position: absolute;
+      left: 10px;
+      top: 10px;
+      font-size: 1em;
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
     }
     #map {
       height: calc(100vh - 120px);
@@ -35,6 +46,13 @@
       border-bottom: 1px solid #ccc;
       align-items: center;
       flex-wrap: wrap;
+      transition: max-height 0.3s ease, padding 0.3s ease;
+      overflow: hidden;
+      max-height: 200px;
+    }
+    #form-container.hidden {
+      max-height: 0;
+      padding: 0 10px;
     }
     input, select, button {
       padding: 6px;
@@ -59,7 +77,10 @@
 </head>
 <body>
 
-<header>UAS MsEd Student Locations</header>
+<header>
+  <button id="toggle-form" onclick="toggleForm()">☰ Hide Form</button>
+  UAS MsEd Student Locations
+</header>
 <div id="form-container">
   Name: <input id="form-name" placeholder="Your Name">
   Location: <input id="form-location" placeholder="Town, State">
@@ -237,6 +258,23 @@
       alert("You must type DELETE exactly.");
     }
   };
+
+  window.toggleForm = function () {
+    const form = document.getElementById("form-container");
+    const btn = document.getElementById("toggle-form");
+
+    const isHidden = form.classList.toggle("hidden");
+    btn.textContent = isHidden ? "☰ Show Form" : "☰ Hide Form";
+
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 350);
+  };
+
+  if (window.innerWidth <= 768) {
+    document.getElementById("form-container").classList.add("hidden");
+    document.getElementById("toggle-form").textContent = "☰ Show Form";
+  }
 </script>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
